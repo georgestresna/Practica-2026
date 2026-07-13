@@ -12,7 +12,8 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-
+      OCR_SERVICE_URL: http://ocr:8001
+  
   db:
     image: postgres:16-alpine
     environment:
@@ -21,3 +22,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
+
+  ocr:
+    build: ./ocr
+    ports:
+      - "8001:8001"
