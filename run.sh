@@ -2,8 +2,7 @@
 
 # chmod +x run.sh
 # sudo usermod -aG docker $USER
-# sudo apt install util-linux-extra
-# newgrp docker
+#restart daemon docker
 
 docker compose down --remove-orphans
 docker image prune -f
