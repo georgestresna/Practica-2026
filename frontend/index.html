@@ -1,11 +1,97 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ro">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Frontend</title>
+  <meta charset="utf-8">
+  <title>App Biserici</title>
 </head>
+
 <body>
-  <div class="h1">Frontend Functional</div>
+  <h1>App Biserici</h1>
+
+  <h2>Status</h2>
+  <button onclick="checkHealth()">Verifica</button>
+  <pre id="status">-</pre>
+
+  <h2>Upload document</h2>
+  <input type="file" id="file">
+  <button onclick="upload()">Trimite</button>
+  <pre id="upload-result"></pre>
+
+  <h2>Documente</h2>
+  <button onclick="loadDocs()">Reincarca lista</button>
+  <ul id="docs"></ul>
+
+  <h2>Detalii document</h2>
+  <pre id="detail">Click pe un document din lista.</pre>
+
+  <script>
+    const API = "http://localhost:8000";
+
+    async function checkHealth() {
+      const out = document.getElementById("status");
+      try {
+        const health = await (await fetch(`${API}/health`)).json();
+        const ocr = await (await fetch(`${API}/ocr-test`)).json();
+        out.textContent = JSON.stringify({ health, ocr }, null, 2);
+      } catch (e) {
+        out.textContent = "Eroare: " + e;
+      }
+    }
+
+    async function loadDocs() {
+      const ul = document.getElementById("docs");
+      ul.innerHTML = "";
+      try {
+        const docs = await (await fetch(`${API}/documente`)).json();
+        if (!docs.length) {
+          ul.innerHTML = "<li>Niciun document.</li>";
+          return;
+        }
+        docs.forEach(d => {
+          const li = document.createElement("li");
+          const a = document.createElement("a");
+          a.href = "#";
+          a.textContent = `#${d.id} - ${d.titlu} [${d.status}]`;
+          a.onclick = (e) => { e.preventDefault(); showDetail(d.id); };
+          li.appendChild(a);
+          ul.appendChild(li);
+        });
+      } catch (e) {
+        ul.innerHTML = "<li>Eroare: " + e + "</li>";
+      }
+    }
+
+    async function showDetail(id) {
+      const out = document.getElementById("detail");
+      out.textContent = "Se incarca...";
+      try {
+        const doc = await (await fetch(`${API}/documente/${id}`)).json();
+        out.textContent = JSON.stringify(doc, null, 2);
+      } catch (e) {
+        out.textContent = "Eroare: " + e;
+      }
+    }
+
+    async function upload() {
+      const input = document.getElementById("file");
+      const out = document.getElementById("upload-result");
+      if (!input.files.length) { out.textContent = "Alege un fisier."; return; }
+      const fd = new FormData();
+      fd.append("file", input.files[0]);
+      out.textContent = "Se trimite...";
+      try {
+        const r = await fetch(`${API}/documente/upload`, { method: "POST", body: fd });
+        out.textContent = JSON.stringify(await r.json(), null, 2);
+        loadDocs();
+      } catch (e) {
+        out.textContent = "Eroare: " + e;
+      }
+    }
+
+    checkHealth();
+    loadDocs();
+  </script>
 </body>
+
 </html>
