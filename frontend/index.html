@@ -73,15 +73,65 @@
     }
 
     async function showDetail(id) {
-      const out = document.getElementById("detail");
-      out.textContent = "Se incarca...";
-      try {
-        const doc = await (await fetch(`${API}/documente/${id}`)).json();
-        out.textContent = JSON.stringify(doc, null, 2);
-      } catch (e) {
-        out.textContent = "Eroare: " + e;
+        const out = document.getElementById("detail");
+        out.textContent = "Se incarca...";
+        try {
+          const doc = await (await fetch(`${API}/documente/${id}`)).json();
+          const text = doc.text.length ? doc.text[0].continut : "";
+          const entitati = doc.entitati.map(e => `${e.tip}: ${e.valoare}`).join("\n");
+
+          out.innerHTML = `
+      <p><b>#${doc.id}</b> - ${doc.titlu} | status: <b id="st">${doc.status}</b></p>
+
+      <p>
+        <button onclick="setStatus(${id}, 'reviewed')">Marcheaza revizuit</button>
+        <button onclick="setStatus(${id}, 'validated')">Valideaza</button>
+        <button onclick="setStatus(${id}, 'raw')">Inapoi la raw</button>
+      </p>
+
+      <p>Text OCR (editabil):</p>
+      <textarea id="txt" rows="8" cols="80">${text}</textarea><br>
+      <button onclick="saveText(${id})">Salveaza textul</button>
+      <span id="save-msg"></span>
+
+      <p>Entitati:</p>
+      <pre>${entitati || "-"}</pre>
+    `;
+        } catch (e) {
+          out.textContent = "Eroare: " + e;
+        }
       }
-    }
+
+      async function setStatus(id, status) {
+        try {
+          const r = await fetch(`${API}/documente/${id}/status`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status })
+          });
+          const d = await r.json();
+          document.getElementById("st").textContent = d.status;
+          loadDocs();
+        } catch (e) {
+          alert("Eroare: " + e);
+        }
+      }
+
+      async function saveText(id) {
+        const msg = document.getElementById("save-msg");
+        msg.textContent = "Se salveaza...";
+        try {
+          const continut = document.getElementById("txt").value;
+          await fetch(`${API}/documente/${id}/text`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ continut })
+          });
+          msg.textContent = "Salvat.";
+        } catch (e) {
+          msg.textContent = "Eroare: " + e;
+        }
+      }
 
     async function upload() {
       const input = document.getElementById("file");

@@ -5,6 +5,7 @@ from pathlib import Path
 import httpx
 import psycopg
 from fastapi import FastAPI, HTTPException, UploadFile
+from pydantic import BaseModel
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -118,3 +119,36 @@ def get_document(doc_id: int) -> dict:
         "text": [{"continut": t[0], "motor_ocr": t[1]} for t in texts],
         "entitati": [{"tip": e[0], "valoare": e[1]} for e in ents],
     }
+
+class StatusUpdate(BaseModel):
+    status: str
+
+
+class TextUpdate(BaseModel):
+    continut: str
+
+
+@app.patch("/documente/{doc_id}/status")
+def update_status(doc_id: int, payload: StatusUpdate) -> dict:
+    if payload.status not in ("raw", "reviewed", "validated"):
+        raise HTTPException(status_code=400, detail="Status invalid")
+    with psycopg.connect(DATABASE_URL, connect_timeout=3) as conn:
+        row = conn.execute(
+            "UPDATE documente SET status = %s WHERE id = %s RETURNING id, status",
+            (payload.status, doc_id),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Document inexistent")
+    return {"id": row[0], "status": row[1]}
+
+
+@app.patch("/documente/{doc_id}/text")
+def update_text(doc_id: int, payload: TextUpdate) -> dict:
+    with psycopg.connect(DATABASE_URL, connect_timeout=3) as conn:
+        row = conn.execute(
+            "UPDATE text_extras SET continut = %s WHERE document_id = %s RETURNING id",
+            (payload.continut, doc_id),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Text inexistent pentru documentul asta")
+    return {"document_id": doc_id, "salvat": True}
