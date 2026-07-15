@@ -3,11 +3,21 @@
 
 <head>
   <meta charset="utf-8">
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
   <title>App Biserici</title>
 </head>
 
 <body>
   <h1>App Biserici</h1>
+
+  <h2>Model 3D</h2>
+  <model-viewer 
+    src="/models/church_1.glb" 
+    alt="Model 3D biserica" 
+    camera-controls auto-rotate 
+    shadow-intensity="1"
+    style="width: 100%; height: 500px; background-color: #eee;">
+  </model-viewer>
 
   <h2>Status</h2>
   <button onclick="checkHealth()">Verifica</button>
