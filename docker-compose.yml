@@ -6,6 +6,7 @@ services:
     volumes:
       - ./frontend/index.html:/usr/share/nginx/html/index.html:ro
       - ./frontend/models:/usr/share/nginx/html/models:ro
+      - ./frontend/style.css:/usr/share/nginx/html/style.css:ro
 
   backend:
     build: ./backend

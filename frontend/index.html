@@ -3,178 +3,204 @@
 
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>App Biserici — Arhiva digitala</title>
+  <link rel="stylesheet" href="/style.css">
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
-  <title>App Biserici</title>
 </head>
 
 <body>
-  <h1>App Biserici</h1>
 
-  <h2>Model 3D</h2>
-  <model-viewer 
-    src="/models/scene.gltf" 
-    alt="Model 3D biserica" 
-    camera-controls auto-rotate
-    camera-orbit="auto 90deg auto"
-    min-camera-orbit="auto 90deg auto"
-    max-camera-orbit="auto 90deg auto" 
-    shadow-intensity="1"
-    style="width: 100%; height: 500px; background-color: #eee;">
-  </model-viewer>
+  <div class="hero">
+    <model-viewer src="/models/scene.gltf" alt="Model 3D biserica" camera-controls auto-rotate
+      camera-orbit="auto 90deg auto" min-camera-orbit="auto 90deg auto" max-camera-orbit="auto 90deg auto"
+      shadow-intensity="1"></model-viewer>
+    <div class="hero-title">
+      <h1>App Biserici</h1>
+      <p>Arhiva digitala a documentelor bisericesti</p>
+    </div>
+  </div>
 
-  <h2>Status</h2>
-  <button onclick="checkHealth()">Verifica</button>
-  <pre id="status">-</pre>
+  <main>
+    <section>
+      <h2>Stare servicii</h2>
+      <div class="svc">
+        <span id="s-db">Baza de date</span>
+        <span id="s-ocr">Serviciu OCR</span>
+      </div>
+    </section>
 
-  <h2>Upload document</h2>
-  <input type="file" id="file">
-  <button onclick="upload()">Trimite</button>
-  <pre id="upload-result"></pre>
+    <section>
+      <h2>Adauga document</h2>
+      <input type="file" id="file">
+      <button onclick="upload()">Incarca si digitizeaza</button>
+      <p class="msg" id="upload-msg"></p>
+    </section>
 
-  <h2>Documente</h2>
-  <button onclick="loadDocs()">Reincarca lista</button>
-  <ul id="docs"></ul>
+    <section>
+      <h2>Registru documente</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Nr</th>
+            <th>Document</th>
+            <th>Stare</th>
+            <th>Adaugat</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="docs"></tbody>
+      </table>
+    </section>
 
-  <h2>Detalii document</h2>
-  <pre id="detail">Click pe un document din lista.</pre>
-
-  <h2>Stergere document</h2>
-  <input type="number" id="delete-id" placeholder="ID document">
-  <button onclick="deleteDoc()">Sterge document</button>
-  <pre id="delete-result"></pre>
+    <section id="detail-section" hidden>
+      <h2>Verificare document</h2>
+      <div id="detail"></div>
+    </section>
+  </main>
 
   <script>
     const API = "http://localhost:8000";
 
-    async function checkHealth() {
-      const out = document.getElementById("status");
+    async function checkServices() {
       try {
-        const health = await (await fetch(`${API}/health`)).json();
-        const ocr = await (await fetch(`${API}/ocr-test`)).json();
-        out.textContent = JSON.stringify({ health, ocr }, null, 2);
-      } catch (e) {
-        out.textContent = "Eroare: " + e;
-      }
+        const h = await (await fetch(`${API}/health`)).json();
+        document.getElementById("s-db").className = h.database === "ok" ? "ok" : "down";
+      } catch { document.getElementById("s-db").className = "down"; }
+      try {
+        const o = await (await fetch(`${API}/ocr-test`)).json();
+        document.getElementById("s-ocr").className = o.ocr_response ? "ok" : "down";
+      } catch { document.getElementById("s-ocr").className = "down"; }
     }
 
     async function loadDocs() {
-      const ul = document.getElementById("docs");
-      ul.innerHTML = "";
+      const tb = document.getElementById("docs");
       try {
         const docs = await (await fetch(`${API}/documente`)).json();
         if (!docs.length) {
-          ul.innerHTML = "<li>Niciun document.</li>";
+          tb.innerHTML = `<tr><td colspan="5" class="msg">Niciun document. Incarca primul scan mai sus.</td></tr>`;
           return;
         }
-        docs.forEach(d => {
-          const li = document.createElement("li");
-          const a = document.createElement("a");
-          a.href = "#";
-          a.textContent = `#${d.id} - ${d.titlu} [${d.status}]`;
-          a.onclick = (e) => { e.preventDefault(); showDetail(d.id); };
-          li.appendChild(a);
-          ul.appendChild(li);
-        });
+        tb.innerHTML = docs.map(d => `
+      <tr>
+        <td class="id" data-clickable onclick="showDetail(${d.id})">${String(d.id).padStart(3, "0")}</td>
+        <td data-clickable onclick="showDetail(${d.id})">${d.titlu}</td>
+        <td><span class="stamp ${d.status}">${d.status}</span></td>
+        <td class="mono">${d.created_at.slice(0, 10)}</td>
+        <td><button class="ghost" onclick="deleteDoc(${d.id}, '${d.titlu.replace(/'/g, "\\'")}')">Sterge</button></td>
+      </tr>`).join("");
       } catch (e) {
-        ul.innerHTML = "<li>Eroare: " + e + "</li>";
+        tb.innerHTML = `<tr><td colspan="5" class="msg">Backendul nu raspunde.</td></tr>`;
       }
     }
-    async function deleteDoc(){
-      const idInput = document.getElementById("delete-id");
-      const out = document.getElementById("delete-result");
-      const id = idInput.value;
-      if (!id) { out.textContent = "Introdu un ID."; return; }
-      out.textContent = "Se sterge...";
+
+    async function showDetail(id) {
+      const sec = document.getElementById("detail-section");
+      const out = document.getElementById("detail");
+      sec.hidden = false;
+      out.innerHTML = `<p class="msg">Se incarca...</p>`;
       try {
-        const r = await fetch(`${API}/documente/${id}`, { method: "DELETE" });
-        if (!r.ok) {
-          out.textContent = `Eroare: ${r.status}`;
-          return;
-        }
-        out.textContent = JSON.stringify(await r.json(), null, 2);
+        const doc = await (await fetch(`${API}/documente/${id}`)).json();
+        const text = doc.text.length ? doc.text[0].continut : "";
+        const motor = doc.text.length ? doc.text[0].motor_ocr : "-";
+        const ents = doc.entitati.map(e =>
+          `<li><span class="tip">${e.tip}</span><span>${e.valoare}</span></li>`).join("");
+
+        out.innerHTML = `
+      <div class="detail-head">
+        <span class="num">${String(doc.id).padStart(3, "0")}</span>
+        <span class="titlu">${doc.titlu}</span>
+        <span class="stamp ${doc.status}" id="st">${doc.status}</span>
+        <button class="close" onclick="closeDetail()" title="Inchide">×</button>
+      </div>
+
+      <div class="actions">
+        <button onclick="setStatus(${id}, 'reviewed')">Marcheaza verificat</button>
+        <button onclick="setStatus(${id}, 'validated')">Valideaza</button>
+        <button onclick="setStatus(${id}, 'raw')">Reia verificarea</button>
+      </div>
+
+      <p class="label">Transcriere — motor: ${motor}</p>
+      <textarea id="txt" rows="7">${text}</textarea>
+      <p><button onclick="saveText(${id})">Salveaza transcrierea</button>
+         <span class="msg" id="save-msg"></span></p>
+
+      <p class="label">Entitati identificate</p>
+      <ul class="ent-list">${ents || '<li class="msg">Nicio entitate.</li>'}</ul>
+    `;
+        sec.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (e) {
+        out.innerHTML = `<p class="msg">Documentul nu a putut fi incarcat.</p>`;
+      }
+    }
+
+    async function setStatus(id, status) {
+      try {
+        const r = await fetch(`${API}/documente/${id}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status })
+        });
+        const d = await r.json();
+        const el = document.getElementById("st");
+        el.textContent = d.status;
+        el.className = `stamp ${d.status}`;
         loadDocs();
       } catch (e) {
-        out.textContent = "Eroare: " + e;
+        alert("Statusul nu a putut fi schimbat.");
       }
     }
-    async function showDetail(id) {
-        const out = document.getElementById("detail");
-        out.textContent = "Se incarca...";
-        try {
-          const doc = await (await fetch(`${API}/documente/${id}`)).json();
-          const text = doc.text.length ? doc.text[0].continut : "";
-          const entitati = doc.entitati.map(e => `${e.tip}: ${e.valoare}`).join("\n");
 
-          out.innerHTML = `
-      <p><b>#${doc.id}</b> - ${doc.titlu} | status: <b id="st">${doc.status}</b></p>
+    function closeDetail() {
+        document.getElementById("detail-section").hidden = true;
+    }
 
-      <p>
-        <button onclick="setStatus(${id}, 'reviewed')">Marcheaza revizuit</button>
-        <button onclick="setStatus(${id}, 'validated')">Valideaza</button>
-        <button onclick="setStatus(${id}, 'raw')">Inapoi la raw</button>
-      </p>
-
-      <p>Text OCR (editabil):</p>
-      <textarea id="txt" rows="8" cols="80">${text}</textarea><br>
-      <button onclick="saveText(${id})">Salveaza textul</button>
-      <span id="save-msg"></span>
-
-      <p>Entitati:</p>
-      <pre>${entitati || "-"}</pre>
-    `;
-        } catch (e) {
-          out.textContent = "Eroare: " + e;
-        }
+    async function saveText(id) {
+      const msg = document.getElementById("save-msg");
+      msg.textContent = "Se salveaza...";
+      try {
+        await fetch(`${API}/documente/${id}/text`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ continut: document.getElementById("txt").value })
+        });
+        msg.textContent = "Transcriere salvata.";
+      } catch (e) {
+        msg.textContent = "Salvarea a esuat.";
       }
+    }
 
-      async function setStatus(id, status) {
-        try {
-          const r = await fetch(`${API}/documente/${id}/status`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status })
-          });
-          const d = await r.json();
-          document.getElementById("st").textContent = d.status;
-          loadDocs();
-        } catch (e) {
-          alert("Eroare: " + e);
-        }
+    async function deleteDoc(id, titlu) {
+      if (!confirm(`Stergi documentul ${String(id).padStart(3, "0")} — ${titlu}?`)) return;
+      try {
+        const r = await fetch(`${API}/documente/${id}`, { method: "DELETE" });
+        if (!r.ok) { alert(`Stergerea a esuat (${r.status}).`); return; }
+        document.getElementById("detail-section").hidden = true;
+        loadDocs();
+      } catch (e) {
+        alert("Stergerea a esuat.");
       }
-
-      async function saveText(id) {
-        const msg = document.getElementById("save-msg");
-        msg.textContent = "Se salveaza...";
-        try {
-          const continut = document.getElementById("txt").value;
-          await fetch(`${API}/documente/${id}/text`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ continut })
-          });
-          msg.textContent = "Salvat.";
-        } catch (e) {
-          msg.textContent = "Eroare: " + e;
-        }
-      }
+    }
 
     async function upload() {
       const input = document.getElementById("file");
-      const out = document.getElementById("upload-result");
-      if (!input.files.length) { out.textContent = "Alege un fisier."; return; }
+      const msg = document.getElementById("upload-msg");
+      if (!input.files.length) { msg.textContent = "Alege un fisier."; return; }
+      msg.textContent = "Se incarca si se digitizeaza...";
       const fd = new FormData();
       fd.append("file", input.files[0]);
-      out.textContent = "Se trimite...";
       try {
         const r = await fetch(`${API}/documente/upload`, { method: "POST", body: fd });
-        out.textContent = JSON.stringify(await r.json(), null, 2);
+        const d = await r.json();
+        msg.textContent = `Document ${String(d.document_id).padStart(3, "0")} adaugat.`;
+        input.value = "";
         loadDocs();
       } catch (e) {
-        out.textContent = "Eroare: " + e;
+        msg.textContent = "Incarcarea a esuat.";
       }
     }
 
-    checkHealth();
+    checkServices();
     loadDocs();
   </script>
 </body>
