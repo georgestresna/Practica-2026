@@ -4,7 +4,7 @@ from pathlib import Path
 
 import httpx
 import psycopg
-from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -45,7 +45,7 @@ def ocr_test() -> dict:
         return {"backend": "ok", "ocr": "down", "error": str(exc)}
 
 @app.post("/documente/upload")
-def upload_document(file: UploadFile) -> dict:
+def upload_document(file: UploadFile = File(...)) -> dict:
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     titlu = file.filename or "document-fara-nume"
 
@@ -65,7 +65,11 @@ def upload_document(file: UploadFile) -> dict:
         )
 
         # Chemam OCR-ul sincron.
-        r = httpx.post(f"{OCR_SERVICE_URL}/ocr", json={"document_id": doc_id}, timeout=30)
+        r = httpx.post(
+            f"{OCR_SERVICE_URL}/ocr",
+            json={"document_id": doc_id, "file_path": str(dest)},
+            timeout=30,
+        )
         r.raise_for_status()
         ocr = r.json()
 
@@ -93,8 +97,24 @@ def list_documente() -> list[dict]:
         for r in rows
     ]
 
+@app.delete("/documente/{doc_id:int}")
+def delete_document(doc_id: int) -> dict:
+    with psycopg.connect(DATABASE_URL, connect_timeout=3) as conn:
+        row = conn.execute(
+            "SELECT cale_fisier FROM documente WHERE id = %s", (doc_id,)
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Document inexistent")
+        cale_fisier = row[0]
+        conn.execute("DELETE FROM documente WHERE id = %s", (doc_id,))
+    # Stergem si fisierul de pe disc.
+    try:
+        os.remove(cale_fisier)
+    except FileNotFoundError:
+        pass
+    return {"document_id": doc_id, "deleted": True}
 
-@app.get("/documente/{doc_id}")
+@app.get("/documente/{doc_id:int}")
 def get_document(doc_id: int) -> dict:
     with psycopg.connect(DATABASE_URL, connect_timeout=3) as conn:
         doc = conn.execute(
@@ -128,7 +148,7 @@ class TextUpdate(BaseModel):
     continut: str
 
 
-@app.patch("/documente/{doc_id}/status")
+@app.patch("/documente/{doc_id:int}/status")
 def update_status(doc_id: int, payload: StatusUpdate) -> dict:
     if payload.status not in ("raw", "reviewed", "validated"):
         raise HTTPException(status_code=400, detail="Status invalid")
@@ -142,7 +162,7 @@ def update_status(doc_id: int, payload: StatusUpdate) -> dict:
     return {"id": row[0], "status": row[1]}
 
 
-@app.patch("/documente/{doc_id}/text")
+@app.patch("/documente/{doc_id:int}/text")
 def update_text(doc_id: int, payload: TextUpdate) -> dict:
     with psycopg.connect(DATABASE_URL, connect_timeout=3) as conn:
         row = conn.execute(

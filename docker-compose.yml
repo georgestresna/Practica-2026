@@ -34,6 +34,8 @@ services:
     build: ./ocr
     ports:
       - "8001:8001"
+    volumes:
+      - ./uploads:/data/uploads:ro
 
 volumes:
   pgdata:
