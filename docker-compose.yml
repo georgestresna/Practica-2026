@@ -5,9 +5,11 @@ services:
       - "3000:80"
     volumes:
       - ./frontend/index.html:/usr/share/nginx/html/index.html:ro
+      - ./frontend/app.js:/usr/share/nginx/html/app.js:ro
       - ./frontend/models:/usr/share/nginx/html/models:ro
       - ./frontend/style.css:/usr/share/nginx/html/style.css:ro
-
+      - ./frontend/upload.html:/usr/share/nginx/html/upload.html:ro
+      - ./frontend/upload.js:/usr/share/nginx/html/upload.js:ro
   backend:
     build: ./backend
     ports:

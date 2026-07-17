@@ -118,6 +118,8 @@ Fisierele din `./uploads/` NU sunt in volum - raman pe disc si dupa `down -v`. D
 | POST | `/documente/upload` | urca fisier -> salveaza -> OCR -> db |
 | GET | `/documente` | lista documentelor |
 | GET | `/documente/{id}` | document + text + entitati |
+| DELETE | `/documente/{id}` | stergere document incarcat |
+
 
 Din browser la `localhost:8000/docs` (are buton de upload).
 
