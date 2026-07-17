@@ -4,10 +4,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>App Biserici — Arhiva digitala</title>
+  <title>App Biserici — Incarcare document</title>
   <link rel="stylesheet" href="/style.css">
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
   <script defer src="/app.js"></script>
+  <script defer src="/upload.js"></script>
 </head>
 
 <body>
@@ -18,8 +19,8 @@
       shadow-intensity="1"></model-viewer>
     <div class="hero-title">
       <h1>App Biserici</h1>
-      <p>Arhiva digitala a documentelor bisericesti</p>
-      <p><button type="button" onclick="location.href='upload.html'">Incarcare Documente</button></p>
+      <p>Incarca documente noi in arhiva digitala</p>
+      <p><button type="button" onclick="location.href='/index.html'">Vezi arhiva</button></p>
     </div>
   </div>
 
@@ -30,6 +31,34 @@
         <span id="s-db">Baza de date</span>
         <span id="s-ocr">Serviciu OCR</span>
       </div>
+    </section>
+
+    <section>
+      <h2>Adauga document</h2>
+      <input type="file" id="file">
+      <button onclick="upload()">Incarca si digitizeaza</button>
+      <p class="msg" id="upload-msg"></p>
+    </section>
+
+    <section>
+      <h2>Registru documente</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Nr</th>
+            <th>Document</th>
+            <th>Stare</th>
+            <th>Adaugat</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="docs"></tbody>
+      </table>
+    </section>
+
+    <section id="detail-section" hidden>
+      <h2>Verificare document</h2>
+      <div id="detail"></div>
     </section>
   </main>
 

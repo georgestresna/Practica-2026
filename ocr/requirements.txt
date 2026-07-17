@@ -5,3 +5,5 @@ pandas
 opencv-python-headless
 pytesseract
 PyMuPDF
+spacy
+pydantic
