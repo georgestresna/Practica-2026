@@ -3,7 +3,8 @@ const API = "http://localhost:8000";
 async function checkServices() {
   try {
     const h = await (await fetch(`${API}/health`)).json();
-    document.getElementById("s-db").className = h.database === "ok" ? "ok" : "down";
+    document.getElementById("s-db").className =
+      h.database === "ok" ? "ok" : "down";
   } catch {
     document.getElementById("s-db").className = "down";
   }
@@ -32,7 +33,7 @@ async function loadDocs() {
 
     tb.innerHTML = docs
       .map(
-        d => `
+        (d) => `
       <tr>
         <td class="id" data-clickable onclick="showDetail(${d.id})">${String(d.id).padStart(3, "0")}</td>
         <td data-clickable onclick="showDetail(${d.id})">${d.titlu}</td>
@@ -63,7 +64,10 @@ async function showDetail(id) {
     const text = doc.text.length ? doc.text[0].continut : "";
     const motor = doc.text.length ? doc.text[0].motor_ocr : "-";
     const ents = doc.entitati
-      .map(e => `<li><span class="tip">${e.tip}</span><span>${e.valoare}</span></li>`)
+      .map(
+        (e) =>
+          `<li><span class="tip">${e.tip}</span><span>${e.valoare}</span></li>`,
+      )
       .join("");
 
     out.innerHTML = `
@@ -143,7 +147,8 @@ async function saveText(id) {
 }
 
 async function deleteDoc(id, titlu) {
-  if (!confirm(`Stergi documentul ${String(id).padStart(3, "0")} — ${titlu}?`)) return;
+  if (!confirm(`Stergi documentul ${String(id).padStart(3, "0")} — ${titlu}?`))
+    return;
 
   try {
     const r = await fetch(`${API}/documente/${id}`, { method: "DELETE" });

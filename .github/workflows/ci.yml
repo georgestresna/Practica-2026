@@ -2,9 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main", "master" ]
   pull_request:
-    branches: [ "main", "master" ]
 
 jobs:
   lint:
@@ -14,21 +12,37 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # -- Python & SQL Setup --
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
-      - name: Install Linting Tools
+      - name: Install Python Linters & Formatters
         run: |
           python -m pip install --upgrade pip
-          pip install ruff
+          pip install ruff sqlfluff
 
-      - name: Run Ruff Lint check
+      - name: Run Ruff Lint check (Python)
         run: ruff check .
 
-      - name: Run Ruff Format check
+      - name: Run Ruff Format check (Python)
         run: ruff format --check .
+
+      - name: Run SQLFluff Lint (SQL)
+        run: sqlfluff lint db/init/01-create_tables.sql --dialect postgres
+
+      # -- Node.js Setup for JS, HTML, CSS, YAML, Markdown --
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run Prettier check (HTML, CSS, JS, Markdown, YAML)
+        run: npx prettier --check "frontend/**/*.{js,html,css}" "README.md" "docker-compose.yml" ".github/workflows/*.yml"
+
+      - name: Run Oxlint (JavaScript static analysis)
+        run: npx oxlint -A no-unused-vars
 
   build:
     name: Docker Compose Build

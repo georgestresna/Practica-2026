@@ -1,38 +1,47 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ro">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>App Biserici — Arhiva digitala</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script
+      type="module"
+      src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"
+    ></script>
+    <script defer src="/app.js"></script>
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>App Biserici — Arhiva digitala</title>
-  <link rel="stylesheet" href="/style.css">
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
-  <script defer src="/app.js"></script>
-</head>
-
-<body>
-
-  <div class="hero">
-    <model-viewer src="/models/scene.gltf" alt="Model 3D biserica" auto-rotate
-      camera-orbit="auto 90deg auto" min-camera-orbit="auto 90deg auto" max-camera-orbit="auto 90deg auto"
-      shadow-intensity="1"></model-viewer>
-    <div class="hero-title">
-      <h1>App Biserici</h1>
-      <p>Arhiva digitala a documentelor bisericesti</p>
-      <p><button type="button" onclick="location.href='upload.html'">Incarcare Documente</button></p>
-    </div>
-  </div>
-
-  <main>
-    <section>
-      <h2>Stare servicii</h2>
-      <div class="svc">
-        <span id="s-db">Baza de date</span>
-        <span id="s-ocr">Serviciu OCR</span>
+  <body>
+    <div class="hero">
+      <model-viewer
+        src="/models/scene.gltf"
+        alt="Model 3D biserica"
+        auto-rotate
+        camera-orbit="auto 90deg auto"
+        min-camera-orbit="auto 90deg auto"
+        max-camera-orbit="auto 90deg auto"
+        shadow-intensity="1"
+      ></model-viewer>
+      <div class="hero-title">
+        <h1>App Biserici</h1>
+        <p>Arhiva digitala a documentelor bisericesti</p>
+        <p>
+          <button type="button" onclick="location.href = 'upload.html'">
+            Incarcare Documente
+          </button>
+        </p>
       </div>
-    </section>
-  </main>
+    </div>
 
-</body>
-
+    <main>
+      <section>
+        <h2>Stare servicii</h2>
+        <div class="svc">
+          <span id="s-db">Baza de date</span>
+          <span id="s-ocr">Serviciu OCR</span>
+        </div>
+      </section>
+    </main>
+  </body>
 </html>
