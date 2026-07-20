@@ -26,6 +26,7 @@ llm_client = Anthropic()
 def root() -> dict:
     return {"message": "Backend Functional!git branch -M main"}
 
+
 @app.get("/health")
 def health() -> dict:
     try:
@@ -35,6 +36,7 @@ def health() -> dict:
     except Exception as exc:
         return {"backend": "ok", "database": "down", "error": str(exc)}
 
+
 @app.get("/ocr-test")
 def ocr_test() -> dict:
     try:
@@ -43,6 +45,7 @@ def ocr_test() -> dict:
         return {"backend": "ok", "ocr_response": r.json()}
     except Exception as exc:
         return {"backend": "ok", "ocr": "down", "error": str(exc)}
+
 
 @app.post("/documente/upload")
 def upload_document(file: UploadFile = File(...)) -> dict:
@@ -97,6 +100,7 @@ def list_documente() -> list[dict]:
         for r in rows
     ]
 
+
 @app.delete("/documente/{doc_id:int}")
 def delete_document(doc_id: int) -> dict:
     with psycopg.connect(DATABASE_URL, connect_timeout=3) as conn:
@@ -113,6 +117,7 @@ def delete_document(doc_id: int) -> dict:
     except FileNotFoundError:
         pass
     return {"document_id": doc_id, "deleted": True}
+
 
 @app.get("/documente/{doc_id:int}")
 def get_document(doc_id: int) -> dict:
@@ -139,6 +144,7 @@ def get_document(doc_id: int) -> dict:
         "text": [{"continut": t[0], "motor_ocr": t[1]} for t in texts],
         "entitati": [{"tip": e[0], "valoare": e[1]} for e in ents],
     }
+
 
 class StatusUpdate(BaseModel):
     status: str

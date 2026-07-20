@@ -6,11 +6,11 @@ RETURNS text AS $$
 $$ LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT;
 
 CREATE TABLE documente (
-    id          SERIAL PRIMARY KEY,
-    titlu       TEXT NOT NULL,
+    id SERIAL PRIMARY KEY,
+    titlu TEXT NOT NULL,
     cale_fisier TEXT NOT NULL,
-    status      TEXT NOT NULL DEFAULT 'raw',
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+    status TEXT NOT NULL DEFAULT 'raw',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE text_extras (
@@ -24,8 +24,8 @@ CREATE TABLE text_extras (
 CREATE INDEX idx_text_extras_cautare ON text_extras USING GIN (cautare);
 
 CREATE TABLE entitati_extrase (
-    id          SERIAL PRIMARY KEY,
-    document_id INTEGER NOT NULL REFERENCES documente(id) ON DELETE CASCADE,
-    tip         TEXT NOT NULL,
-    valoare     TEXT NOT NULL
+    id SERIAL PRIMARY KEY,
+    document_id INTEGER NOT NULL REFERENCES documente (id) ON DELETE CASCADE,
+    tip TEXT NOT NULL,
+    valoare TEXT NOT NULL
 );

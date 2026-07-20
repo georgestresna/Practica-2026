@@ -8,12 +8,12 @@ Starea actuala: **schelet functional**. Fluxul upload -> salvare -> OCR -> baza 
 
 ## Stack
 
-| Serviciu | Tehnologie | Port host | Descriere |
-|---|---|---|---|
-| `frontend` | nginx + HTML/JS | 3000 | interfata minima de test |
-| `backend` | FastAPI (Python 3.12) | 8000 | API principal |
-| `ocr-service` | FastAPI (Python 3.12) | 8001 | OCR/HTR - **mock deocamdata** |
-| `db` | PostgreSQL 16 | 5432 | metadate + text extras |
+| Serviciu      | Tehnologie            | Port host | Descriere                     |
+| ------------- | --------------------- | --------- | ----------------------------- |
+| `frontend`    | nginx + HTML/JS       | 3000      | interfata minima de test      |
+| `backend`     | FastAPI (Python 3.12) | 8000      | API principal                 |
+| `ocr-service` | FastAPI (Python 3.12) | 8001      | OCR/HTR - **mock deocamdata** |
+| `db`          | PostgreSQL 16         | 5432      | metadate + text extras        |
 
 Fisierele urcate ajung in `./uploads/` (bind mount local). Nu folosim object storage inca.
 
@@ -34,6 +34,7 @@ sudo ./run.sh
 Verifica ca totul e sus:
 
 Puncte de acces:
+
 - http://localhost:3000 - interfata
 - http://localhost:8000/docs - Swagger UI (toate API-urile, cu buton de test)
 - http://localhost:8001/docs - Swagger UI serviciu OCR
@@ -63,14 +64,14 @@ Totul e **sincron**: clientul asteapta pana termina OCR-ul.
 
 ### Cine vorbeste cu cine
 
-| De la | La | Adresa | Protocol |
-|---|---|---|---|
-| host | frontend | `localhost:3000` | HTTP |
-| host | backend | `localhost:8000` | HTTP |
-| host | db | `localhost:5432` | psql |
-| backend | db | `db:5432` | psycopg |
+| De la   | La          | Adresa             | Protocol     |
+| ------- | ----------- | ------------------ | ------------ |
+| host    | frontend    | `localhost:3000`   | HTTP         |
+| host    | backend     | `localhost:8000`   | HTTP         |
+| host    | db          | `localhost:5432`   | psql         |
+| backend | db          | `db:5432`          | psycopg      |
 | backend | ocr-service | `ocr-service:8001` | HTTP (httpx) |
-| backend | disc | `/data/uploads` | bind mount |
+| backend | disc        | `/data/uploads`    | bind mount   |
 
 **Important:** intre containere se comunica prin **numele serviciului din compose** + **portul intern** (`db:5432`, nu `localhost:5432`). Maparile `ports:` exista doar ca sa ajungem noi de pe host.
 
@@ -83,12 +84,15 @@ Totul e **sincron**: clientul asteapta pana termina OCR-ul.
 Trei tabele (`db/init/01-create_tables.sql`):
 
 **`documente`** - un rand per fisier urcat
+
 - `id`, `titlu`, `cale_fisier`, `status` (`raw` / `reviewed` / `validated`), `created_at`
 
 **`text_extras`** - transcrierea OCR
+
 - `document_id` (FK), `continut`, `motor_ocr`
 
 **`entitati_extrase`** - entitatile NER
+
 - `document_id` (FK), `tip` (`AN`, `PERSOANA`, `LOCALITATE`), `valoare`
 
 Relatie: un document -> o transcriere -> mai multe entitati, legate prin `document_id` (`ON DELETE CASCADE`).
@@ -110,20 +114,20 @@ Fisierele din `./uploads/` NU sunt in volum - raman pe disc si dupa `down -v`. D
 
 ## API
 
-| Metoda | Ruta | Ce face |
-|---|---|---|
-| GET | `/` | mesaj de test |
-| GET | `/health` | verifica conexiunea la db |
-| GET | `/ocr-test` | verifica ca ocr-service raspunde |
-| POST | `/documente/upload` | urca fisier -> salveaza -> OCR -> db |
-| GET | `/documente` | lista documentelor |
-| GET | `/documente/{id}` | document + text + entitati |
-| DELETE | `/documente/{id}` | stergere document incarcat |
-
+| Metoda | Ruta                | Ce face                              |
+| ------ | ------------------- | ------------------------------------ |
+| GET    | `/`                 | mesaj de test                        |
+| GET    | `/health`           | verifica conexiunea la db            |
+| GET    | `/ocr-test`         | verifica ca ocr-service raspunde     |
+| POST   | `/documente/upload` | urca fisier -> salveaza -> OCR -> db |
+| GET    | `/documente`        | lista documentelor                   |
+| GET    | `/documente/{id}`   | document + text + entitati           |
+| DELETE | `/documente/{id}`   | stergere document incarcat           |
 
 Din browser la `localhost:8000/docs` (are buton de upload).
 
 Serviciul OCR (`ocr-service`), apelat de backend:
+
 - `GET /health`
 - `POST /ocr` - primeste `{"document_id": int}`, intoarce `{text, entities, engine}`
 
@@ -136,11 +140,13 @@ Serviciul OCR (`ocr-service`), apelat de backend:
 ## Ce mai trebuie facut
 
 **Urmatorii pasi:**
+
 - [ ] **OCR real** - inlocuim mock-ul cu Tesseract si/sau TrOCR. Ambele gratis, de testat pe scanari reale. API ramane identic.
 - [ ] **NER real** - extragere entitati din textul transcris
 - [ ] **CI/CD** - GitHub Actions: lint + `docker compose build` la fiecare push
 
 **Dupa:**
+
 - [ ] **Validare manuala** - endpoint + UI pentru `raw` -> `reviewed` -> `validated` (human-in-the-loop)
 - [ ] **RAG + Qdrant** - chunking, embeddings, chatbot
 - [ ] **Tabel `biserica`** - momentan schema e simplificata, fara relatia document -> biserica

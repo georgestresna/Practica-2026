@@ -14,7 +14,10 @@ async function upload() {
   fd.append("file", input.files[0]);
 
   try {
-    const r = await fetch(`${UPLOAD_API}/documente/upload`, { method: "POST", body: fd });
+    const r = await fetch(`${UPLOAD_API}/documente/upload`, {
+      method: "POST",
+      body: fd,
+    });
     const d = await r.json();
     msg.textContent = `Document ${String(d.document_id).padStart(3, "0")} adaugat.`;
     input.value = "";
