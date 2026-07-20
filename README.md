@@ -148,6 +148,6 @@ Serviciul OCR (`ocr-service`), apelat de backend:
 - [ ] **OCR asincron** - acum e sincron; cu Tesseract real pe scanari mari, clientul ar astepta 30+ secunde
 
 **Datorii tehnice cunoscute:**
-- credentialele sunt in `.env` comis local, plain text - de mutat cand apare primul secret real
+- .env nu mai este comis local
 - fara healthcheck-uri / `depends_on` - la pornire, backend-ul poate incerca db-ul inainte sa fie gata
 - fara teste

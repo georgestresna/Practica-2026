@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ro">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>App Biserici — Asistent</title>
+  <link rel="stylesheet" href="/style.css">
+  <script defer src="/chat.js"></script>
+</head>
+
+<body>
+
+  <div class="hero">
+    <div class="hero-title">
+      <h1>Asistent arhiva</h1>
+      <p>Intreaba orice despre documentele digitizate</p>
+      <p><button type="button" onclick="location.href='/index.html'">Vezi arhiva</button></p>
+    </div>
+  </div>
+
+  <main>
+    <section>
+      <h2>Intreaba asistentul</h2>
+      <div id="chat-log" class="chat-log"></div>
+
+      <div class="chat-input">
+        <input type="text" id="intrebare" placeholder="Ex: Cine a fost Andrei Şaguna?" onkeydown="if(event.key==='Enter') sendChat()">
+        <button onclick="sendChat()">Trimite</button>
+      </div>
+      <p class="msg" id="chat-status"></p>
+    </section>
+  </main>
+
+</body>
+
+</html>

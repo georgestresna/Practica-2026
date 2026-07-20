@@ -7,3 +7,4 @@ pytesseract
 PyMuPDF
 spacy
 pydantic
+anthropic
