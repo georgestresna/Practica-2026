@@ -6,7 +6,7 @@ import httpx
 import psycopg
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
-
+from anthropic import Anthropic
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -21,8 +21,7 @@ app.add_middleware(
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 OCR_SERVICE_URL = os.environ.get("OCR_SERVICE_URL", "")
 UPLOAD_DIR = Path(os.environ.get("UPLOAD_DIR", "/data/uploads"))
-
-
+llm_client = Anthropic()
 @app.get("/")
 def root() -> dict:
     return {"message": "Backend Functional!git branch -M main"}
@@ -177,7 +176,49 @@ def update_text(doc_id: int, payload: TextUpdate) -> dict:
             (payload.continut, doc_id),
         ).fetchone()
         if not row:
-            raise HTTPException(
-                status_code=404, detail="Text inexistent pentru documentul asta"
-            )
+            raise HTTPException(status_code=404, detail="Text inexistent pentru documentul asta")
     return {"document_id": doc_id, "salvat": True}
+
+class ChatRequest(BaseModel):
+    intrebare: str
+
+@app.post("/chat")
+def chat(req: ChatRequest) -> dict:
+    with psycopg.connect(DATABASE_URL, connect_timeout=3) as conn:
+        rows = conn.execute(
+            """
+            SELECT t.document_id, d.titlu, t.continut,
+                ts_rank(t.cautare, plainto_tsquery('romanian', unaccent_immutable(%s))) AS rank
+            FROM text_extras t
+            JOIN documente d ON d.id = t.document_id
+            WHERE t.cautare @@ plainto_tsquery('romanian', unaccent_immutable(%s))
+            ORDER BY rank DESC
+            LIMIT 3
+            """,
+            (req.intrebare, req.intrebare),
+        ).fetchall()
+
+    if not rows:
+        return {"raspuns": "Nu am găsit informații relevante în documentele disponibile.", "surse": []}
+
+    context = "\n\n".join(
+        f"[Document: {r[1]}]\n{r[2][:3000]}" for r in rows
+    )
+
+    prompt = f"""Ești un asistent care răspunde la întrebări despre documente de patrimoniu bisericesc, folosind DOAR informațiile din contextul de mai jos. Dacă răspunsul nu se află în context, spune asta clar.
+
+Context:
+{context}
+
+Întrebare: {req.intrebare}"""
+
+    response = llm_client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=1000,
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    return {
+        "raspuns": response.content[0].text,
+        "surse": [{"document_id": r[0], "titlu": r[1]} for r in rows],
+    }
