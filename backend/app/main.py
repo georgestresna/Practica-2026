@@ -184,18 +184,24 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 def chat(req: ChatRequest) -> dict:
+    words = [w for w in req.intrebare.split() if w.strip()]
+    if not words:
+        return {"raspuns": "Te rog formulează o întrebare.", "surse": []}
+
+    or_query = " || ".join(["plainto_tsquery('romanian', unaccent_immutable(%s))"] * len(words))
+
     with psycopg.connect(DATABASE_URL, connect_timeout=3) as conn:
         rows = conn.execute(
-            """
+            f"""
             SELECT t.document_id, d.titlu, t.continut,
-                ts_rank(t.cautare, plainto_tsquery('romanian', unaccent_immutable(%s))) AS rank
+                   ts_rank(t.cautare, ({or_query})) AS rank
             FROM text_extras t
             JOIN documente d ON d.id = t.document_id
-            WHERE t.cautare @@ plainto_tsquery('romanian', unaccent_immutable(%s))
+            WHERE t.cautare @@ ({or_query})
             ORDER BY rank DESC
             LIMIT 3
             """,
-            (req.intrebare, req.intrebare),
+            tuple(words) * 2,
         ).fetchall()
 
     if not rows:
@@ -206,6 +212,8 @@ def chat(req: ChatRequest) -> dict:
     )
 
     prompt = f"""Ești un asistent care răspunde la întrebări despre documente de patrimoniu bisericesc, folosind DOAR informațiile din contextul de mai jos. Dacă răspunsul nu se află în context, spune asta clar.
+
+Răspunde în text simplu, conversațional, fără formatare markdown (fără #, fără **, fără liste cu marcatori, fără citate cu >). Scrie ca și cum ai vorbi direct cu utilizatorul, în paragrafe scurte.
 
 Context:
 {context}
