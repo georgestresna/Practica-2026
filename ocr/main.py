@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import os
+import re
 import cv2
 import numpy as np
 import pandas as pd
@@ -102,7 +103,17 @@ def get_ocr_text(image: np.ndarray) -> str:
 
     return content
 
+def clean_ocr_text(text: str) -> str:
+    if not text:
+        return text
 
+    text = re.sub(r"-\n", "", text)                    # rejoin hyphenated words split across a line break
+    text = re.sub(r"(?<!\n)\n(?!\n)", " ", text)        # single newlines (mid-paragraph) -> space
+    text = re.sub(r"\n{2,}", "\n\n", text)              # collapse 3+ line breaks to one paragraph break
+    text = re.sub(r"[ \t]{2,}", " ", text)              # collapse runs of spaces/tabs
+    text = "\n\n".join(p.strip() for p in text.split("\n\n"))
+
+    return text.strip()
 def extract_from_path(path: str) -> list[dict]:
     results = []
     for page_number, (kind, payload) in enumerate(load_document(path), start=1):
@@ -113,6 +124,7 @@ def extract_from_path(path: str) -> list[dict]:
             text = get_ocr_text(payload)
             source = "ocr_tesseract"
 
+        text = clean_ocr_text(text)  
         results.append({"page": page_number, "text": text, "source": source})
 
     return results

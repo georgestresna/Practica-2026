@@ -1,121 +1,262 @@
 const API = "http://localhost:8000";
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"]'/g, (character) => {
+    switch (character) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      case "'":
+        return "&#39;";
+      default:
+        return character;
+    }
+  });
+}
+
+function statusLabel(status) {
+  if (status === "validated") {
+    return "Validat";
+  }
+
+  if (status === "reviewed") {
+    return "Verificat";
+  }
+
+  return "Nevalidat";
+}
+
+function formatDate(iso) {
+  const date = new Date(iso);
+
+  if (Number.isNaN(date.getTime())) {
+    return iso.slice(0, 10);
+  }
+
+  return date.toLocaleDateString("ro-RO", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function setWorkflowProgress(stage) {
+  const chip = document.getElementById("workflow-chip");
+  const steps = [
+    document.getElementById("step-upload"),
+    document.getElementById("step-ocr"),
+    document.getElementById("step-entities"),
+    document.getElementById("step-review"),
+    document.getElementById("step-publish"),
+  ];
+
+  if (!steps.some(Boolean)) {
+    return;
+  }
+
+  const stageMap = {
+    idle: 0,
+    uploading: 1,
+    processing: 3,
+    review: 4,
+    published: 5,
+  };
+
+  const activeCount = stageMap[stage] ?? 0;
+
+  steps.forEach((step, index) => {
+    if (!step) {
+      return;
+    }
+
+    step.classList.remove("active", "muted");
+
+    if (index < activeCount) {
+      step.classList.add("done");
+    }
+
+    if (index + 1 === activeCount && stage !== "idle") {
+      step.classList.add("active");
+    } else if (index + 1 > activeCount) {
+      step.classList.add("muted");
+    }
+  });
+
+  if (chip) {
+    const labels = {
+      idle: "Așteaptă încărcarea",
+      uploading: "Se încarcă",
+      processing: "OCR în curs",
+      review: "Validare umană",
+      published: "Publicat",
+    };
+
+    chip.textContent = labels[stage] ?? labels.idle;
+  }
+}
+
 async function checkServices() {
+  const db = document.getElementById("s-db");
+  const ocr = document.getElementById("s-ocr");
+
   try {
     const h = await (await fetch(`${API}/health`)).json();
-    document.getElementById("s-db").className =
-      h.database === "ok" ? "ok" : "down";
+    if (db) {
+      db.className = h.database === "ok" ? "ok" : "down";
+    }
   } catch {
-    document.getElementById("s-db").className = "down";
+    if (db) {
+      db.className = "down";
+    }
   }
 
   try {
-    const o = await (await fetch(`${API}/ocr-test`)).json();
-    document.getElementById("s-ocr").className = o.ocr_response ? "ok" : "down";
+    const response = await (await fetch(`${API}/ocr-test`)).json();
+    if (ocr) {
+      ocr.className = response.ocr_response ? "ok" : "down";
+    }
   } catch {
-    document.getElementById("s-ocr").className = "down";
+    if (ocr) {
+      ocr.className = "down";
+    }
   }
 }
 
 async function loadDocs() {
-  const tb = document.getElementById("docs");
+  const tbody = document.getElementById("docs");
 
-  if (!tb) {
+  if (!tbody) {
     return;
   }
 
   try {
     const docs = await (await fetch(`${API}/documente`)).json();
+
     if (!docs.length) {
-      tb.innerHTML = `<tr><td colspan="5" class="msg">Niciun document. Incarca primul scan mai sus.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="msg">Niciun document încă. Încarcă primul scan de mai sus.</td></tr>`;
       return;
     }
 
-    tb.innerHTML = docs
+    tbody.innerHTML = docs
       .map(
-        (d) => `
-      <tr>
-        <td class="id" data-clickable onclick="showDetail(${d.id})">${String(d.id).padStart(3, "0")}</td>
-        <td data-clickable onclick="showDetail(${d.id})">${d.titlu}</td>
-        <td><span class="stamp ${d.status}">${d.status}</span></td>
-        <td class="mono">${d.created_at.slice(0, 10)}</td>
-        <td><button class="ghost" onclick="deleteDoc(${d.id}, '${d.titlu.replace(/'/g, "\\'")}')">Sterge</button></td>
-      </tr>`,
+        (doc) => `
+          <tr>
+            <td class="id" data-clickable onclick='showDetail(${doc.id})'>${String(doc.id).padStart(3, "0")}</td>
+            <td data-clickable onclick='showDetail(${doc.id})'>${escapeHtml(doc.titlu)}</td>
+            <td><span class="stamp ${doc.status}">${statusLabel(doc.status)}</span></td>
+            <td>${escapeHtml(formatDate(doc.created_at))}</td>
+            <td><button class="ghost" onclick='deleteDoc(${doc.id}, ${JSON.stringify(doc.titlu)})'>Șterge</button></td>
+          </tr>`,
       )
       .join("");
   } catch {
-    tb.innerHTML = `<tr><td colspan="5" class="msg">Backendul nu raspunde.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="msg">Backendul nu răspunde.</td></tr>`;
   }
 }
 
 async function showDetail(id) {
-  const sec = document.getElementById("detail-section");
+  const section = document.getElementById("detail-section");
   const out = document.getElementById("detail");
 
-  if (!sec || !out) {
+  if (!section || !out) {
     return;
   }
 
-  sec.hidden = false;
-  out.innerHTML = `<p class="msg">Se incarca...</p>`;
+  section.hidden = false;
+  out.innerHTML = `<div class="validation-panel"><p class="msg">Se încarcă documentul...</p></div>`;
 
   try {
     const doc = await (await fetch(`${API}/documente/${id}`)).json();
     const text = doc.text.length ? doc.text[0].continut : "";
     const motor = doc.text.length ? doc.text[0].motor_ocr : "-";
-    const ents = doc.entitati
+    const entities = doc.entitati
       .map(
-        (e) =>
-          `<li><span class="tip">${e.tip}</span><span>${e.valoare}</span></li>`,
+        (entity, index) => `
+          <div class="entity-row">
+            <div class="entity-top">
+              <span class="entity-type">${escapeHtml(entity.tip)}</span>
+              <strong>${escapeHtml(entity.valoare)}</strong>
+            </div>
+            <div class="entity-meter" style="--meter:${Math.max(62, 92 - index * 4)}%"></div>
+          </div>`,
       )
       .join("");
 
     out.innerHTML = `
-      <div class="detail-head">
-        <span class="num">${String(doc.id).padStart(3, "0")}</span>
-        <span class="titlu">${doc.titlu}</span>
-        <span class="stamp ${doc.status}" id="st">${doc.status}</span>
-        <button class="close" onclick="closeDetail()" title="Inchide">×</button>
+      <div class="validation-panel">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Validare umană</p>
+            <h3>Verifică transcrierea și entitățile extrase înainte de publicare.</h3>
+            <p class="panel-subtitle">Document ${String(doc.id).padStart(3, "0")} · ${escapeHtml(doc.titlu)}</p>
+          </div>
+          <div class="section-head-meta">
+            <span class="stamp ${doc.status}" id="st">${statusLabel(doc.status)}</span>
+          </div>
+        </div>
+
+        <div class="validation-grid">
+          <div class="validation-card">
+            <p class="panel-label">Text OCR / HTR</p>
+            <textarea id="txt" rows="12">${escapeHtml(text)}</textarea>
+            <div class="panel-actions">
+              <button class="btn btn-primary" type="button" onclick="saveText(${id})">Salvează transcrierea</button>
+              <span class="msg" id="save-msg"></span>
+            </div>
+          </div>
+
+          <div class="entities-card">
+            <p class="panel-label">Entități detectate</p>
+            <div class="entity-stack">
+              ${entities || '<p class="msg">Nicio entitate detectată.</p>'}
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-actions split">
+          <div class="panel-actions">
+            <button class="btn btn-secondary" type="button" onclick="setStatus(${id}, 'reviewed')">Marchează verificat</button>
+            <button class="btn btn-primary" type="button" onclick="setStatus(${id}, 'validated')">Validează</button>
+          </div>
+          <button class="close" type="button" onclick="closeDetail()" title="Închide">Închide</button>
+        </div>
       </div>
-
-      <div class="actions">
-        <button onclick="setStatus(${id}, 'reviewed')">Marcheaza verificat</button>
-        <button onclick="setStatus(${id}, 'validated')">Valideaza</button>
-        <button onclick="setStatus(${id}, 'raw')">Reia verificarea</button>
-      </div>
-
-      <p class="label">Transcriere — motor: ${motor}</p>
-      <textarea id="txt" rows="7">${text}</textarea>
-      <p><button onclick="saveText(${id})">Salveaza transcrierea</button>
-         <span class="msg" id="save-msg"></span></p>
-
-      <p class="label">Entitati identificate</p>
-      <ul class="ent-list">${ents || '<li class="msg">Nicio entitate.</li>'}</ul>
     `;
 
-    sec.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (typeof setWorkflowProgress === "function") {
+      setWorkflowProgress(doc.status === "validated" ? "published" : "review");
+    }
+
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch {
-    out.innerHTML = `<p class="msg">Documentul nu a putut fi incarcat.</p>`;
+    out.innerHTML = `<div class="validation-panel"><p class="msg">Documentul nu a putut fi încărcat.</p></div>`;
   }
 }
 
 async function setStatus(id, status) {
   try {
-    const r = await fetch(`${API}/documente/${id}/status`, {
+    const response = await fetch(`${API}/documente/${id}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
-    const d = await r.json();
-    const el = document.getElementById("st");
+    const data = await response.json();
+    const badge = document.getElementById("st");
 
-    if (!el) {
-      loadDocs();
-      return;
+    if (badge) {
+      badge.textContent = statusLabel(data.status);
+      badge.className = `stamp ${data.status}`;
     }
 
-    el.textContent = d.status;
-    el.className = `stamp ${d.status}`;
+    if (typeof setWorkflowProgress === "function") {
+      setWorkflowProgress(data.status === "validated" ? "published" : "review");
+    }
+
     loadDocs();
   } catch {
     alert("Statusul nu a putut fi schimbat.");
@@ -128,11 +269,20 @@ function closeDetail() {
   if (section) {
     section.hidden = true;
   }
+
+  if (typeof setWorkflowProgress === "function") {
+    setWorkflowProgress("idle");
+  }
 }
 
 async function saveText(id) {
   const msg = document.getElementById("save-msg");
-  msg.textContent = "Se salveaza...";
+
+  if (!msg) {
+    return;
+  }
+
+  msg.textContent = "Se salvează...";
 
   try {
     await fetch(`${API}/documente/${id}/text`, {
@@ -140,27 +290,34 @@ async function saveText(id) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ continut: document.getElementById("txt").value }),
     });
-    msg.textContent = "Transcriere salvata.";
+    msg.textContent = "Transcriere salvată.";
   } catch {
-    msg.textContent = "Salvarea a esuat.";
+    msg.textContent = "Salvarea a eșuat.";
   }
 }
 
 async function deleteDoc(id, titlu) {
-  if (!confirm(`Stergi documentul ${String(id).padStart(3, "0")} — ${titlu}?`))
+  if (!confirm(`Ștergi documentul ${String(id).padStart(3, "0")} — ${titlu}?`)) {
     return;
+  }
 
   try {
-    const r = await fetch(`${API}/documente/${id}`, { method: "DELETE" });
-    if (!r.ok) {
-      alert(`Stergerea a esuat (${r.status}).`);
+    const response = await fetch(`${API}/documente/${id}`, { method: "DELETE" });
+
+    if (!response.ok) {
+      alert(`Ștergerea a eșuat (${response.status}).`);
       return;
     }
 
-    document.getElementById("detail-section").hidden = true;
+    const section = document.getElementById("detail-section");
+
+    if (section) {
+      section.hidden = true;
+    }
+
     loadDocs();
   } catch {
-    alert("Stergerea a esuat.");
+    alert("Ștergerea a eșuat.");
   }
 }
 

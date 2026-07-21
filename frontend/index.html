@@ -3,45 +3,83 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>App Biserici — Arhiva digitala</title>
+    <title>Enoria — Arhivă digitală parohială</title>
     <link rel="stylesheet" href="/style.css" />
-    <script
-      type="module"
-      src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"
-    ></script>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <script defer src="/app.js"></script>
   </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/index.html" aria-label="Enoria acasă">
+        <span class="brand-mark">✝</span>
+        <span class="brand-copy">
+          <strong>Enoria</strong>
+          <span>Arhivă digitală parohială</span>
+        </span>
+      </a>
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>App Biserici — Arhiva digitala</title>
-  <link rel="stylesheet" href="/style.css">
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
-  <script defer src="/app.js"></script>
-</head>
+      <details class="menu-dropdown">
+        <summary class="menu-toggle" aria-label="Meniu principal">
+          <span class="menu-icon" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </summary>
+        <div class="menu-panel" role="menu" aria-label="Navigare principală">
+          <a class="menu-link active" role="menuitem" href="/index.html">Acasă</a>
+          <a class="menu-link" role="menuitem" href="/upload.html">Încărcare Documente</a>
+          <a class="menu-link" role="menuitem" href="/chat.html">Asistent</a>
+        </div>
+      </details>
+    </header>
 
-<body>
+    <main class="page-shell landing-page">
+      <section class="hero hero-home">
+        <div class="hero-copy">
+          <p class="eyebrow">Documentarea patrimoniului ecleziastic</p>
+          <h1>Memoria bisericii, păstrată în format digital.</h1>
+          <p class="lead">
+            Arhivele bisericesti, mai aproape de tine ca niciodată. Încarcă documente, transcrie și interoghează registrele parohiale cu ajutorul asistentului conversațional.
+          </p>
 
-  <div class="hero">
-    <model-viewer src="/models/scene.gltf" alt="Model 3D biserica" auto-rotate
-      camera-orbit="auto 90deg auto" min-camera-orbit="auto 90deg auto" max-camera-orbit="auto 90deg auto"
-      shadow-intensity="1"></model-viewer>
-    <div class="hero-title">
-      <h1>App Biserici</h1>
-      <p>Arhiva digitala a documentelor bisericesti</p>
-      <p><button type="button" onclick="location.href='upload.html'">Incarcare Documente</button></p>
-      <p><button type="button" onclick="location.href='/chat.html'">Asistent</button></p>
-    </div>
-  </div>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="/upload.html">Încarcă un document</a>
+            <a class="btn btn-secondary" href="/chat.html">Întreabă asistentul</a>
+          </div>
+        </div>
 
-  <main>
-    <section>
-      <h2>Stare servicii</h2>
-      <div class="svc">
-        <span id="s-db">Baza de date</span>
-        <span id="s-ocr">Serviciu OCR</span>
-      </div>
-    </div>
+        <div class="hero-figure church-figure">
+          <model-viewer
+            src="/models/scene.gltf"
+            alt="Model 3D biserica"
+            auto-rotate
+            camera-orbit="auto 90deg auto"
+            min-camera-orbit="auto 90deg auto"
+            max-camera-orbit="auto 90deg auto"
+            shadow-intensity="1"
+            ar
+          ></model-viewer>
+        </div>
+      </section>
+
+      <section class="feature-grid" aria-label="Capabilități">
+        <article>
+          <p class="feature-kicker">01 · Digitizare</p>
+          <h3>Scanare și ingestie</h3>
+          <p>Încarci un PDF sau o fotografie, iar backendul îl stochează și pornește imediat procesarea.</p>
+        </article>
+        <article>
+          <p class="feature-kicker">02 · OCR / HTR</p>
+          <h3>Transcriere automată</h3>
+          <p>Textul extras și metadatele sunt păstrate pentru verificare și publicare ulterioară.</p>
+        </article>
+        <article>
+          <p class="feature-kicker">03 · Asistent</p>
+          <h3>Căutare conversațională</h3>
+          <p>Documentele devin interogabile prin chat, fără să mai cauți manual în registrele scanate.</p>
+        </article>
+      </section>
+    </main>
   </body>
 </html>

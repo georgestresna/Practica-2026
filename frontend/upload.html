@@ -3,76 +3,134 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>App Biserici — Incarcare document</title>
+    <title>Enoria — Încărcare document</title>
     <link rel="stylesheet" href="/style.css" />
-    <script
-      type="module"
-      src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"
-    ></script>
     <script defer src="/app.js"></script>
     <script defer src="/upload.js"></script>
   </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/index.html" aria-label="Enoria acasă">
+        <span class="brand-mark">✝</span>
+        <span class="brand-copy">
+          <strong>Enoria</strong>
+          <span>Arhivă digitală parohială</span>
+        </span>
+      </a>
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>App Biserici — Incarcare document</title>
-  <link rel="stylesheet" href="/style.css">
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
-  <script defer src="/app.js"></script>
-  <script defer src="/upload.js"></script>
-</head>
+      <details class="menu-dropdown">
+        <summary class="menu-toggle" aria-label="Meniu principal">
+          <span class="menu-icon" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </summary>
+        <div class="menu-panel" role="menu" aria-label="Navigare principală">
+          <a class="menu-link" role="menuitem" href="/index.html">Acasă</a>
+          <a class="menu-link active" role="menuitem" href="/upload.html">Încărcare Documente</a>
+          <a class="menu-link" role="menuitem" href="/chat.html">Asistent</a>
+        </div>
+      </details>
+    </header>
 
-<body>
+    <main class="page-shell upload-page">
+      <section class="hero hero-upload">
+        <div class="hero-copy compact">
+          <h1>Încărcare document</h1>
+          <p class="lead">
+            Testarea functionalitatii de incarcare a documentelor, pentru a fi adaugate ulterior in registrul parohial
+          </p>
+        </div>
 
-  <div class="hero">
-    <model-viewer src="/models/scene.gltf" alt="Model 3D biserica" auto-rotate
-      camera-orbit="auto 90deg auto" min-camera-orbit="auto 90deg auto" max-camera-orbit="auto 90deg auto"
-      shadow-intensity="1"></model-viewer>
-    <div class="hero-title">
-      <h1>App Biserici</h1>
-      <p>Incarca documente noi in arhiva digitala</p>
-      <p><button type="button" onclick="location.href='/index.html'">Vezi arhiva</button></p>
-      <p><button type="button" onclick="location.href='/chat.html'">Asistent</button></p>
-    </div>
-  </div>
-
-  <main>
-    <section>
-      <h2>Stare servicii</h2>
-      <div class="svc">
-        <span id="s-db">Baza de date</span>
-        <span id="s-ocr">Serviciu OCR</span>
-      </div>
-    </div>
-
-    <main>
-      <section>
-        <h2>Adauga document</h2>
-        <input type="file" id="file" />
-        <button onclick="upload()">Incarca si digitizeaza</button>
-        <p class="msg" id="upload-msg"></p>
+        <div class="hero-summary card">
+          <div class="upload-file-slot">
+            <div>
+              <p class="summary-title" id="selected-file-name">Niciun fișier selectat</p>
+              <p class="summary-subtitle" id="selected-file-meta">Alege un PDF, JPG sau PNG pentru digitizare.</p>
+            </div>
+          </div>
+          <label class="btn btn-secondary file-trigger" for="file">Alege fișier</label>
+          <button class="btn btn-primary" type="button" onclick="upload()">Încarcă și digitizează</button>
+          <p class="msg upload-msg" id="upload-msg"></p>
+          <input type="file" id="file" class="sr-only" />
+        </div>
       </section>
 
-      <section>
-        <h2>Registru documente</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Nr</th>
-              <th>Document</th>
-              <th>Stare</th>
-              <th>Adaugat</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="docs"></tbody>
-        </table>
+      <section class="workflow-card" aria-labelledby="workflow-title">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Flux de procesare</p>
+            <h2 id="workflow-title">Pașii documentului după încărcare</h2>
+          </div>
+          <span class="status-chip" id="workflow-chip">Așteaptă încărcarea</span>
+        </div>
+
+        <div class="workflow-steps" id="workflow">
+          <article class="workflow-step" id="step-upload">
+            <span class="step-index">1</span>
+            <div>
+              <h3>Document încărcat</h3>
+              <p>Fișierul a fost primit și salvat în sistem.</p>
+            </div>
+          </article>
+          <article class="workflow-step" id="step-ocr">
+            <span class="step-index">2</span>
+            <div>
+              <h3>OCR / HTR</h3>
+              <p>Se transcrie textul din imagine sau PDF.</p>
+            </div>
+          </article>
+          <article class="workflow-step" id="step-entities">
+            <span class="step-index">3</span>
+            <div>
+              <h3>Extragere entități</h3>
+              <p>Se identifică persoane, locuri și date.</p>
+            </div>
+          </article>
+          <article class="workflow-step" id="step-review">
+            <span class="step-index">4</span>
+            <div>
+              <h3>Validare umană în curs</h3>
+              <p>Aștept confirmarea arhivistului înainte de publicare.</p>
+            </div>
+          </article>
+          <article class="workflow-step" id="step-publish">
+            <span class="step-index">5</span>
+            <div>
+              <h3>Publicat în arhivă</h3>
+              <p>Documentul devine disponibil pentru asistent.</p>
+            </div>
+          </article>
+        </div>
       </section>
 
-      <section id="detail-section" hidden>
-        <h2>Verificare document</h2>
+      <section class="validation-wrap" id="detail-section" hidden>
         <div id="detail"></div>
+      </section>
+
+      <section class="archive-wrap" id="arhiva">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Arhivă curentă</p>
+            <h2>Documente încărcate</h2>
+          </div>
+        </div>
+
+        <div class="table-shell">
+          <table class="archive-table">
+            <thead>
+              <tr>
+                <th>Nr</th>
+                <th>Document</th>
+                <th>Stare</th>
+                <th>Adăugat</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="docs"></tbody>
+          </table>
+        </div>
       </section>
     </main>
   </body>

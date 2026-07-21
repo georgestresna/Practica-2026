@@ -4,31 +4,72 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>App Biserici — Asistent</title>
+  <title>Enoria — Asistent</title>
   <link rel="stylesheet" href="/style.css">
   <script defer src="/chat.js"></script>
 </head>
 
 <body>
+  <header class="site-header">
+    <a class="brand" href="/index.html" aria-label="Enoria">
+      <span class="brand-mark">✝</span>
+      <span class="brand-copy">
+        <strong>Enoria</strong>
+        <span>Arhivă digitală parohială</span>
+      </span>
+    </a>
 
-  <div class="hero">
-    <div class="hero-title">
-      <h1>Asistent arhiva</h1>
-      <p>Intreaba orice despre documentele digitizate</p>
-      <p><button type="button" onclick="location.href='/index.html'">Vezi arhiva</button></p>
-    </div>
-  </div>
+    <details class="menu-dropdown">
+        <summary class="menu-toggle" aria-label="Meniu principal">
+          <span class="menu-icon" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </summary>
+        <div class="menu-panel" role="menu" aria-label="Navigare principală">
+          <a class="menu-link" role="menuitem" href="/index.html">Acasă</a>
+          <a class="menu-link" role="menuitem" href="/upload.html">Încărcare Documente</a>
+          <a class="menu-link active" role="menuitem" href="/chat.html">Asistent</a>
+        </div>
+      </details>
+  </header>
 
-  <main>
-    <section>
-      <h2>Intreaba asistentul</h2>
-      <div id="chat-log" class="chat-log"></div>
+  <main class="page-shell chat-page">
+    <section class="chat-hero">
+      <p class="eyebrow">Asistent conversațional</p>
+      <h1>Afla mai multe despre documentele parohiale</h1>
+      <p class="lead">
+        Pune întrebări despre informații aflate în arhivă, iar asistentul va răspunde cu fragmente relevante și surse.
+      </p>
+    </section>
 
-      <div class="chat-input">
-        <input type="text" id="intrebare" placeholder="Ex: Cine a fost Andrei Şaguna?" onkeydown="if(event.key==='Enter') sendChat()">
-        <button onclick="sendChat()">Trimite</button>
-      </div>
-      <p class="msg" id="chat-status"></p>
+    <section class="chat-layout" aria-label="Fereastra de conversație">
+      <section class="chat-window card">
+        <div class="chat-window-head">
+          <div>
+            <p class="eyebrow">Chat arhivă</p>
+            <h2>Asistentul tău pentru documentele parohiale</h2>
+          </div>
+          <span class="status-chip ok">● Online</span>
+        </div>
+
+        <div id="chat-log" class="chat-log" aria-live="polite" aria-label="Conversație">
+        </div>
+
+        <div class="chat-presets" aria-label="Întrebări rapide">
+          <button type="button" class="preset-chip" data-prompt="Cine este menționat în documentele încărcate?">Cine este menționat?</button>
+          <button type="button" class="preset-chip" data-prompt="Ce documente conțin nume de persoane?">Documente cu nume de persoane</button>
+          <button type="button" class="preset-chip" data-prompt="Care sunt cele mai importante date din arhivă?">Date importante</button>
+        </div>
+
+        <div class="chat-composer">
+          <label class="sr-only" for="intrebare">Întrebare pentru asistent</label>
+          <input type="text" id="intrebare" placeholder="Ex: Cine a fost Andrei Șaguna?" autocomplete="off" />
+          <button class="btn btn-primary" type="button" id="send-chat-btn">Trimite</button>
+        </div>
+        <p class="msg chat-status" id="chat-status"></p>
+      </section>
     </section>
   </main>
 
